@@ -1,0 +1,9 @@
+#pragma once
+#include <Windows.h>
+#include <winternl.h>
+#include <iostream>
+#include <print>
+#include "cache.hpp"
+#include "utils.hpp[]"
+
+void handle_thread_creation();
