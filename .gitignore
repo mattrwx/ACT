@@ -45,3 +45,5 @@ config.local.*
 .history/
 .cache/
 .clangd/
+context.py
+*.txt
