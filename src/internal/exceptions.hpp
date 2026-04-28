@@ -8,4 +8,6 @@
 namespace exceptions
 {
     void place_hook();
+
+    void force_exception();
 }

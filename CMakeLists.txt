@@ -48,4 +48,8 @@ set_target_properties(act PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
-target_link_libraries(act PRIVATE ntdll)
+target_link_libraries(act PRIVATE
+    ntdll
+    bcrypt
+    wintrust
+)

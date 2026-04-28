@@ -57,3 +57,18 @@ void exceptions::place_hook()
 
     return;
 }
+
+// If no exception is ever thrown then we can't ensure that Wow64PrepareForException is not being hooked.
+// A exception based debugger using this hook would just ZwContinue or iret before anything even happened.
+void exceptions::force_exception()
+{
+    cache::flags++;
+    try
+    {
+        *(volatile int*)0 = 0;
+    }
+    catch(...)
+    {
+        cache::flags--;
+    }
+}

@@ -1,12 +1,5 @@
 #include "utils.hpp"
 
-
-
-
-
-
-
-
 void utils::populate_pe(HMODULE h_module, IMAGE_DOS_HEADER*& dos_header, IMAGE_NT_HEADERS*& nt_headers)
 {
     dos_header = (IMAGE_DOS_HEADER*)h_module;
@@ -59,4 +52,27 @@ bool utils::is_valid_code_region(void* address)
     }
 
     return false;
+}
+
+bool utils::verify_trust(const wchar_t* path)
+{
+    WINTRUST_FILE_INFO file_info{};
+    file_info.cbStruct      = sizeof(WINTRUST_FILE_INFO);
+    file_info.pcwszFilePath = path;
+
+    WINTRUST_DATA trust_data{};
+    trust_data.cbStruct            = sizeof(WINTRUST_DATA);
+    trust_data.dwUIChoice          = WTD_UI_NONE;
+    trust_data.fdwRevocationChecks = WTD_REVOKE_NONE;
+    trust_data.dwUnionChoice       = WTD_CHOICE_FILE;
+    trust_data.pFile               = &file_info;
+    trust_data.dwStateAction       = WTD_STATEACTION_VERIFY;
+
+    GUID policy = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+    LONG result = WinVerifyTrust(NULL, &policy, &trust_data);
+
+    trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
+    WinVerifyTrust(NULL, &policy, &trust_data);
+
+    return result == ERROR_SUCCESS || result == TRUST_E_NOSIGNATURE;
 }

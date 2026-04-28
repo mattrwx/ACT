@@ -4,6 +4,7 @@
 #include "cache.hpp"
 #include "internal/exceptions.hpp"
 #include "internal/threads.hpp"
+#include "internal/validate_modules.hpp"
 
 void main_thread()
 {
@@ -13,21 +14,40 @@ void main_thread()
     freopen_s(&f, "CONOUT$", "w", stdout);
     freopen_s(&f, "CONIN$", "r", stdin);
 
+    std::println("[+] Started: 0x{:X}", (uintptr_t)cache::local_module::handle);
+
     cache::init();
 
-    std::println("[+] Started: 0x{:X}", (uintptr_t)cache::local_module::handle);
+    // Shit must run early on (at least before WE make any modification)
+    validate_modules::compare_to_disk();
         
     // Cache info about game module
     utils::populate_pe(GetModuleHandle(0), cache::main_pe::dos_header, cache::main_pe::nt_headers);
 
+    // Not overwriting any read only sections
     exceptions::place_hook();
+
+    // Have a base state for the modules
+    validate_modules::hash_module_sections();
 
     while (true)
     {
+        auto starting_flags = cache::flags;
         threads::validate_threads();
 
-        std::println("[+] Scan complete ({} flags)", cache::flags);
-        Sleep(5000);
+        validate_modules::compare_module_hashes();
+
+        //exceptions::force_exception();
+
+        /*if (IsDebuggerPresent())
+        {
+            std::println("[-] Debugger detected by IsDebuggerPresent");
+            cache::flags++;
+        }*/
+
+        std::println("[+] Scan complete ({} flags | {} new flags)", cache::flags, cache::flags - starting_flags);
+
+        Sleep(1000);
     }
 }
 
@@ -44,7 +64,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID) {
         
         case DLL_PROCESS_DETACH:
         {
-            MessageBox(0,"Detected Unload", "ACT", 0);
+            std::println("[X] Detected unload");
             FreeConsole();
             break;
         }
@@ -55,10 +75,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID) {
             break;
         }
 
-        case DLL_THREAD_DETACH:
-        {
-
-        }
+        case DLL_THREAD_DETACH:break;
     }
     return TRUE;
 }
