@@ -1,5 +1,4 @@
 #include <Windows.h>
-#include <iostream>
 #include <print>
 #include <thread>
 #include "cache.hpp"
@@ -14,6 +13,8 @@ void main_thread()
     freopen_s(&f, "CONOUT$", "w", stdout);
     freopen_s(&f, "CONIN$", "r", stdin);
 
+    cache::init();
+
     std::println("[+] Started: 0x{:X}", (uintptr_t)cache::local_module::handle);
         
     // Cache info about game module
@@ -23,10 +24,9 @@ void main_thread()
 
     while (true)
     {
-        std::println("[+] Starting scan!");
+        threads::validate_threads();
 
-
-
+        std::println("[+] Scan complete ({} flags)", cache::flags);
         Sleep(5000);
     }
 }

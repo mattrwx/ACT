@@ -1,8 +1,8 @@
 #include "exceptions.hpp"
 
-void place_hook(EXCEPTION_RECORD* exception_record, CONTEXT* context_record)
+void exception_handler(EXCEPTION_RECORD* exception_record, CONTEXT* context_record)
 {
-    if (*cache::pointers::Wow64PrepareForExecution_pointer != (void*)place_hook)
+    if (*cache::pointers::Wow64PrepareForExecution_pointer != (void*)exception_handler)
     {
         std::println("[-] Detected Wow64PrepareForExecution hook.");
         cache::flags++;
@@ -19,7 +19,7 @@ void place_hook(EXCEPTION_RECORD* exception_record, CONTEXT* context_record)
 }
 
 // NOTE: Fetching Wow64 pointer may differ on 32 bit, will have to check this later
-void exceptions::place_exception_hook()
+void exceptions::place_hook()
 {
     std::println("[+] Placing exception hook.");
     auto ntdll = GetModuleHandleA("ntdll.dll");

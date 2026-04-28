@@ -41,3 +41,9 @@ rules.ninja
 *.pem
 secrets.*
 config.local.*
+
+.history/
+.cache/
+.clangd/
+context.py
+*.txt

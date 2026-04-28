@@ -2,11 +2,6 @@
 #include <Windows.h>
 #include <cstdint>
 
-
-
-
-
-
 namespace cache
 {
     inline uint8_t flags{};
@@ -14,6 +9,7 @@ namespace cache
     namespace process
     {
         inline bool is_32_bit{};
+        inline DWORD id;
     }
     
     namespace local_module
@@ -31,5 +27,10 @@ namespace cache
     {
         inline IMAGE_DOS_HEADER* dos_header{};
         inline IMAGE_NT_HEADERS64* nt_headers{};
+    }
+
+    inline void init()
+    {
+        process::id = GetCurrentProcessId();
     }
 }
