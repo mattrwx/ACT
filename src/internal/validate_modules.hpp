@@ -1,25 +1,39 @@
+// validate_modules.hpp
+
 #pragma once
 #include <Windows.h>
-#include <fstream>
-#include <iostream>
-#include <tlhelp32.h>
-#include <print>
-#include <bcrypt.h>
-#include <vector>
-#include <string>
-#include <cstdint>
-#include <stdexcept>
-#include <unordered_map>
-#include <filesystem>
 #include <winternl.h>
+#include <bcrypt.h>
+#include <fstream>
+#include <filesystem>
+#include <print>
+#include <string>
+#include <vector>
+#include <unordered_map>
+
 #include "cache.hpp"
 #include "utils.hpp"
 
-namespace validate_modules
+struct section_t
 {
-    inline std::unordered_map<HMODULE, std::vector<std::string>> hashes;
+    std::string name;
+    std::string hash;
+    DWORD protection;
+};
 
-    void hash_module_sections();
-    void compare_to_disk();
-    void compare_module_hashes();
+struct module_t {
+    std::string        name;
+    uintptr_t          base;
+    size_t             size;
+    IMAGE_DOS_HEADER*  dos;
+    IMAGE_NT_HEADERS*  nt;
+    std::vector<section_t> sections;
+};
+
+namespace modules
+{
+    inline std::unordered_map<HMODULE, module_t> module_map;
+
+    void init();
+    void validate();
 }

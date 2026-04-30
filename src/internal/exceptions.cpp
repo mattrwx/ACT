@@ -9,7 +9,11 @@ void exception_handler(EXCEPTION_RECORD* exception_record, CONTEXT* context_reco
     }
 
     if (cache::pointers::Wow64PrepareForExecution_pointer && cache::process::is_32_bit)
+    {
         ((LONG(*)(EXCEPTION_RECORD*, CONTEXT*))(cache::pointers::Wow64PrepareForExecution_original))(exception_record, context_record);
+
+        // HANDLE 32 BIT LOGIC
+    }
     
     if (!utils::is_valid_code_region((void*)context_record->Rip))
     {

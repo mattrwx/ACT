@@ -4,8 +4,6 @@ void threads::handle_thread_creation()
 {
     auto tid = GetCurrentThreadId();
 
-    std::println("[+] Thread Started: {}", tid);
-
     validate_thread(tid);
 }
 

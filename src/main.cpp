@@ -18,32 +18,23 @@ void main_thread()
 
     cache::init();
 
-    // Shit must run early on (at least before WE make any modification)
-    validate_modules::compare_to_disk();
-        
     // Cache info about game module
     utils::populate_pe(GetModuleHandle(0), cache::main_pe::dos_header, cache::main_pe::nt_headers);
 
     // Not overwriting any read only sections
     exceptions::place_hook();
 
-    // Have a base state for the modules
-    validate_modules::hash_module_sections();
+    // Shit must run early on (at least before WE make any modification)
+    modules::init();
 
     while (true)
     {
         auto starting_flags = cache::flags;
         threads::validate_threads();
 
-        validate_modules::compare_module_hashes();
+        modules::validate();
 
-        //exceptions::force_exception();
-
-        /*if (IsDebuggerPresent())
-        {
-            std::println("[-] Debugger detected by IsDebuggerPresent");
-            cache::flags++;
-        }*/
+        // exceptions::force_exception();
 
         std::println("[+] Scan complete ({} flags | {} new flags)", cache::flags, cache::flags - starting_flags);
 
