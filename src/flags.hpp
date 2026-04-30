@@ -18,7 +18,8 @@ enum class flags : uint8_t
     section_count_changed,
     section_hash_changed,
     section_protection_changed,
-    failed_to_open_module_file
+    failed_to_open_module_file,
+    directx_vmt_hook
 };
 
 inline std::unordered_set<flags> flags_raised;

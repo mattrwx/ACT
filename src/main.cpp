@@ -6,7 +6,7 @@
 #include "internal/page_walk.hpp"
 #include "internal/threads.hpp"
 #include "internal/validate_modules.hpp"
-
+#include "internal/vmt_hook_detection.hpp"
 
 void main_thread()
 {
@@ -23,6 +23,8 @@ void main_thread()
     // Cache info about game module
     utils::populate_pe(GetModuleHandle(0), cache::main_pe::dos_header, cache::main_pe::nt_headers);
 
+    gfx_offsets::collect();
+
     // Not overwriting any read only sections
     exceptions::place_hook();
 
@@ -37,12 +39,14 @@ void main_thread()
 
         modules::validate();
 
+        gfx_offsets::check();
+
         // pages::walk();
 
         // exceptions::force_exception();
 
         for (const auto& value : flags_raised)
-            std::println("peepeepoopoo: {}", (uint8_t)value);
+            std::println("Flag {}", (uint8_t)value);
 
         Sleep(1000);
     }

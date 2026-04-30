@@ -71,5 +71,5 @@ bool utils::verify_trust(const wchar_t* path)
     trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
     WinVerifyTrust(NULL, &policy, &trust_data);
 
-    return result == ERROR_SUCCESS || result == TRUST_E_NOSIGNATURE;
+    return result == ERROR_SUCCESS;
 }
