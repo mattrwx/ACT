@@ -15,7 +15,7 @@ void threads::validate_thread(DWORD tid)
     if (!h_thread)
     {
         std::println("[-] Thread handle failed to open.");
-        cache::flags++;
+        flags_raised.insert(flags::thread_handle_failed_to_open);
         return;
     }
 
@@ -25,14 +25,14 @@ void threads::validate_thread(DWORD tid)
     if (!NT_SUCCESS(status))
     {
         std::println("[-] NtQueryInformationThread failure.");
-        cache::flags++;
+        flags_raised.insert(flags::NtQueryInformationThread_failure);
         return;
     }
 
     if (!utils::is_valid_code_region(start_address))
     {
         std::println("[-] Start address from invalid region of memory: 0x{:X}", (uintptr_t)start_address);
-        cache::flags++;
+        flags_raised.insert(flags::invalid_thread_start_address);
         return;
     }
 }
@@ -43,22 +43,23 @@ void threads::validate_threads()
     if (snapshot == INVALID_HANDLE_VALUE)
     {
         std::println("[-] Failed to open threads snapshot.");
-        cache::flags++;
+        flags_raised.insert(flags::failed_to_open_threads_snapshot);
         return;
     }
-    
+
     THREADENTRY32 thread_entry{};
     thread_entry.dwSize = sizeof(THREADENTRY32);
 
     if (!Thread32First(snapshot, &thread_entry))
     {
         std::println("[-] Failed to open first thread.");
-        cache::flags++;
+        flags_raised.insert(flags::failed_to_open_first_thread);
         CloseHandle(snapshot);
         return;
     }
 
-    do {
+    do
+    {
         if (thread_entry.th32OwnerProcessID != cache::process::id)
             continue;
 

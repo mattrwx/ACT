@@ -4,14 +4,11 @@
 
 namespace cache
 {
-    inline uint8_t flags{};
-    
     namespace process
     {
-        inline bool is_32_bit{};
         inline DWORD id;
     }
-    
+
     namespace local_module
     {
         inline HMODULE handle{};
@@ -20,7 +17,6 @@ namespace cache
     namespace pointers
     {
         inline void** Wow64PrepareForExecution_pointer{};
-        inline void* Wow64PrepareForExecution_original{};
     }
 
     namespace main_pe

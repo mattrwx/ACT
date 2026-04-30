@@ -9,10 +9,7 @@ void utils::populate_pe(HMODULE h_module, IMAGE_DOS_HEADER*& dos_header, IMAGE_N
     if (h_module != GetModuleHandle(0))
         return;
 
-    if (nt_headers->FileHeader.Machine == IMAGE_FILE_MACHINE_I386)
-        cache::process::is_32_bit = true;
-    
-    else if (nt_headers->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64)
+    if (nt_headers->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64)
     {
         std::println("[-] Invalid architecture detected!");
         FreeLibraryAndExitThread(cache::local_module::handle, 0);
@@ -44,7 +41,7 @@ bool utils::is_valid_code_region(void* address)
 
             auto section_start = module_base + section->VirtualAddress;
             auto section_end = section_start + section->Misc.VirtualSize;
-            auto target  = (uintptr_t)address;
+            auto target = (uintptr_t)address;
 
             if (target >= section_start && target < section_end)
                 return true;
@@ -57,16 +54,16 @@ bool utils::is_valid_code_region(void* address)
 bool utils::verify_trust(const wchar_t* path)
 {
     WINTRUST_FILE_INFO file_info{};
-    file_info.cbStruct      = sizeof(WINTRUST_FILE_INFO);
+    file_info.cbStruct = sizeof(WINTRUST_FILE_INFO);
     file_info.pcwszFilePath = path;
 
     WINTRUST_DATA trust_data{};
-    trust_data.cbStruct            = sizeof(WINTRUST_DATA);
-    trust_data.dwUIChoice          = WTD_UI_NONE;
+    trust_data.cbStruct = sizeof(WINTRUST_DATA);
+    trust_data.dwUIChoice = WTD_UI_NONE;
     trust_data.fdwRevocationChecks = WTD_REVOKE_NONE;
-    trust_data.dwUnionChoice       = WTD_CHOICE_FILE;
-    trust_data.pFile               = &file_info;
-    trust_data.dwStateAction       = WTD_STATEACTION_VERIFY;
+    trust_data.dwUnionChoice = WTD_CHOICE_FILE;
+    trust_data.pFile = &file_info;
+    trust_data.dwStateAction = WTD_STATEACTION_VERIFY;
 
     GUID policy = WINTRUST_ACTION_GENERIC_VERIFY_V2;
     LONG result = WinVerifyTrust(NULL, &policy, &trust_data);

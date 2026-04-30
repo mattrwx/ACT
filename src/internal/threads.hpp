@@ -1,7 +1,8 @@
 #pragma once
 #include <Windows.h>
-#include <winternl.h>
 #include <tlhelp32.h>
+#include <winternl.h>
+#include "../flags.hpp"
 #include "cache.hpp"
 #include "utils.hpp"
 

@@ -6,7 +6,7 @@ static void load_file(const std::string& path, std::unique_ptr<char[]>& buffer, 
     if (!file.is_open())
     {
         std::println("[-] Failed to open module file: {}", path);
-        cache::flags++;
+        flags_raised.insert(flags::failed_to_open_module_file);
         return;
     }
 
@@ -48,7 +48,7 @@ static std::string md5(uintptr_t data, size_t size)
 static bool skip_section(IMAGE_NT_HEADERS* nt, IMAGE_SECTION_HEADER* section)
 {
     std::string_view loader_patched_sections[]{
-            "fothk", ".detourc", ".mrdata", ".rdata", "PAGECONS",
+            "fothk", ".00cfg", ".detourc", ".mrdata", ".rdata", "PAGECONS",
     };
 
     // name-based exclusions
@@ -156,7 +156,7 @@ static void register_module(HMODULE module)
     if (disk_sections.size() != memory_sections.size())
     {
         std::println("[-] Section count mismatch on register: {}", module_path);
-        cache::flags++;
+        flags_raised.insert(flags::section_count_changed);
     }
     else
     {
@@ -165,7 +165,7 @@ static void register_module(HMODULE module)
             if (disk_sections[i].hash != memory_sections[i].hash)
             {
                 std::println("[-] Section hash mismatch on register: {} in {}", disk_sections[i].name, module_path);
-                cache::flags++;
+                flags_raised.insert(flags::section_hash_changed);
             }
         }
     }
@@ -217,7 +217,7 @@ void modules::validate()
             if (!utils::verify_trust(path_buf))
             {
                 std::println("[-] New module failed trust verification: {}", std::filesystem::path(path_buf).string());
-                cache::flags++;
+                flags_raised.insert(flags::new_module_trust_verification);
             }
 
             register_module(hmod);
@@ -230,7 +230,7 @@ void modules::validate()
         if (current.size() != stored.sections.size())
         {
             std::println("[-] Section count changed: {:X}", (uintptr_t)hmod);
-            cache::flags++;
+            flags_raised.insert(flags::section_count_changed);
             continue;
         }
 
@@ -240,14 +240,14 @@ void modules::validate()
             if (current[i].hash != stored.sections[i].hash)
             {
                 std::println("[-] Hash changed: {} in {:X}", stored.sections[i].name, (uintptr_t)hmod);
-                cache::flags++;
+                flags_raised.insert(flags::section_hash_changed);
             }
 
             // Page protection check
             if (current[i].protection != stored.sections[i].protection)
             {
                 std::println("[-] Protection changed: {} in {:X}  ({:08X} -> {:08X})", stored.sections[i].name, (uintptr_t)hmod, stored.sections[i].protection, current[i].protection);
-                cache::flags++;
+                flags_raised.insert(flags::section_protection_changed);
             }
         }
     }

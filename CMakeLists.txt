@@ -15,6 +15,7 @@ add_library(act SHARED
     src/internal/threads.cpp
     src/internal/validate_modules.cpp
     src/internal/vtable.cpp
+    src/internal/page_walk.cpp
     src/utils.cpp
 )
 

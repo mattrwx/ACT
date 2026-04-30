@@ -3,7 +3,9 @@
 #include <iostream>
 #include <print>
 #include "../cache.hpp"
+#include "../flags.hpp"
 #include "../utils.hpp"
+
 
 namespace exceptions
 {

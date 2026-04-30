@@ -5,20 +5,13 @@ void exception_handler(EXCEPTION_RECORD* exception_record, CONTEXT* context_reco
     if (*cache::pointers::Wow64PrepareForExecution_pointer != (void*)exception_handler)
     {
         std::println("[-] Detected Wow64PrepareForExecution hook.");
-        cache::flags++;
+        flags_raised.insert(flags::Wow64PrepareForExecution_hook);
     }
 
-    if (cache::pointers::Wow64PrepareForExecution_pointer && cache::process::is_32_bit)
-    {
-        ((LONG(*)(EXCEPTION_RECORD*, CONTEXT*))(cache::pointers::Wow64PrepareForExecution_original))(exception_record, context_record);
-
-        // HANDLE 32 BIT LOGIC
-    }
-    
     if (!utils::is_valid_code_region((void*)context_record->Rip))
     {
         std::println("[-] Invalid RIP during exception.");
-        cache::flags++;
+        flags_raised.insert(flags::invalid_rip_during_exception);
     }
 }
 
@@ -30,7 +23,7 @@ void exceptions::place_hook()
     if (!ntdll)
     {
         std::println("[-] Failed to find ntdll.dll.");
-        cache::flags++;
+        flags_raised.insert(flags::failed_to_find_ntdll);
         return;
     }
 
@@ -38,21 +31,20 @@ void exceptions::place_hook()
     if (!dispatcher)
     {
         std::println("[-] Failed to find KiUserExceptionDispatcher.");
-        cache::flags++;
+        flags_raised.insert(flags::failed_to_find_KiUserExceptionDispatcher);
         return;
     }
 
     auto rel_addr = *(int32_t*)(dispatcher + 4);
     void** function_ptr = (void**)(dispatcher + 8 + rel_addr);
 
-    if (cache::process::is_32_bit && *function_ptr)
+    if (*function_ptr)
     {
         std::println("[-] Detected Wow64PrepareForExecution_pointer hook.");
-        cache::flags++;
+        flags_raised.insert(flags::Wow64PrepareForExecution_hook);
     }
 
     cache::pointers::Wow64PrepareForExecution_pointer = function_ptr;
-    cache::pointers::Wow64PrepareForExecution_original = *function_ptr;
 
     DWORD old_protect{};
     VirtualProtect(function_ptr, sizeof(void*), PAGE_EXECUTE_READWRITE, &old_protect);
@@ -66,13 +58,13 @@ void exceptions::place_hook()
 // A exception based debugger using this hook would just ZwContinue or iret before anything even happened.
 void exceptions::force_exception()
 {
-    cache::flags++;
+    flags_raised.insert(flags::exception_tampering);
     try
     {
         *(volatile int*)0 = 0;
     }
-    catch(...)
+    catch (...)
     {
-        cache::flags--;
+        flags_raised.erase(flags::exception_tampering);
     }
 }

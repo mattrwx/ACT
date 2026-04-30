@@ -3,8 +3,10 @@
 #include <thread>
 #include "cache.hpp"
 #include "internal/exceptions.hpp"
+#include "internal/page_walk.hpp"
 #include "internal/threads.hpp"
 #include "internal/validate_modules.hpp"
+
 
 void main_thread()
 {
@@ -29,21 +31,27 @@ void main_thread()
 
     while (true)
     {
-        auto starting_flags = cache::flags;
+        std::println("[+] Starting scan");
+
         threads::validate_threads();
 
         modules::validate();
 
+        // pages::walk();
+
         // exceptions::force_exception();
 
-        std::println("[+] Scan complete ({} flags | {} new flags)", cache::flags, cache::flags - starting_flags);
+        for (const auto& value : flags_raised)
+            std::println("peepeepoopoo: {}", (uint8_t)value);
 
         Sleep(1000);
     }
 }
 
-BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID) {
-    switch (ul_reason_for_call) {
+BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID)
+{
+    switch (ul_reason_for_call)
+    {
         case DLL_PROCESS_ATTACH:
         {
             cache::local_module::handle = h_module;
@@ -52,7 +60,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID) {
             t.detach();
             break;
         }
-        
+
         case DLL_PROCESS_DETACH:
         {
             std::println("[X] Detected unload");
@@ -66,7 +74,8 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID) {
             break;
         }
 
-        case DLL_THREAD_DETACH:break;
+        case DLL_THREAD_DETACH:
+            break;
     }
     return TRUE;
 }
