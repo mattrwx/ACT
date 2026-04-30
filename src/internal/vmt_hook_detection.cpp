@@ -80,7 +80,7 @@ bool d3d8_init(d3d8_info &info)
 
     D3D8PP pp = {};
     pp.Windowed = TRUE;
-    pp.SwapEffect = 2;
+    pp.SwapEffect = 1;
     pp.BackBufferFormat = 21;
     pp.BackBufferWidth = pp.BackBufferHeight = 2;
     pp.BackBufferCount = 1;
@@ -103,7 +103,7 @@ bool d3d9_init(d3d9_info &info)
 
     D3DPRESENT_PARAMETERS pp = {};
     pp.Windowed = TRUE;
-    pp.SwapEffect = D3DSWAPEFFECT_FLIP;
+    pp.SwapEffect = D3DSWAPEFFECT_DISCARD;
     pp.BackBufferFormat = D3DFMT_A8R8G8B8;
     pp.BackBufferWidth = pp.BackBufferHeight = 2;
     pp.BackBufferCount = 1;
@@ -312,7 +312,7 @@ void cache_swapchain(void* swap_ptr, bool present1)
 }
 
 template <typename Original>
-static void install_vtable_hook(uintptr_t* vtable, size_t slot, void* hook, Original& original_out)
+void install_vtable_hook(uintptr_t* vtable, size_t slot, void* hook, Original& original_out)
 {
     DWORD old;
     VirtualProtect(&vtable[slot], sizeof(uintptr_t), PAGE_EXECUTE_READWRITE, &old);
@@ -321,7 +321,7 @@ static void install_vtable_hook(uintptr_t* vtable, size_t slot, void* hook, Orig
     VirtualProtect(&vtable[slot], sizeof(uintptr_t), old, &old);
 }
 
-static void restore_vtable_slot(uintptr_t* vtable, size_t slot, uintptr_t replacement)
+void restore_vtable_slot(uintptr_t* vtable, size_t slot, uintptr_t replacement)
 {
     DWORD old;
     VirtualProtect(&vtable[slot], sizeof(uintptr_t), PAGE_EXECUTE_READWRITE, &old);
@@ -342,6 +342,14 @@ HRESULT __stdcall hooked_d3d9_present(void* rcx, const RECT* src, const RECT* ds
     uintptr_t* vtable = *(uintptr_t**)rcx;
     restore_vtable_slot(vtable, D3D9_DEVICE_PRESENT, reinterpret_cast<uintptr_t>(d3d9_original_present));
     cache::game_d3d9_device = rcx;
+
+    IDirect3DSwapChain9 *swap = nullptr;
+    if (SUCCEEDED(static_cast<IDirect3DDevice9 *>(rcx)->GetSwapChain(0, &swap)) && swap)
+    {
+        cache::game_d3d9_swap = swap;
+        swap->Release();
+    }
+
     return d3d9_original_present(rcx, src, dst, wnd, dirty);
 }
 
@@ -582,25 +590,33 @@ namespace gfx_offsets
         if (cache::game_d3d8_device && d3d8.present) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d8_device;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D8_DEVICE_PRESENT]))) 
-            { 
-                std::println("[-] D3D8 Present VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            auto base = (uintptr_t)GetModuleHandleA("d3d8.dll");
+            if (vt[D3D8_DEVICE_PRESENT] - base != gfx_offsets::d3d8.present) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D8_DEVICE_PRESENT]))) 
+                { 
+                    std::println("[-] D3D8 Present VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D8_DEVICE_RESET]))) 
-            { 
-                std::println("[-] D3D8 Reset VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[D3D8_DEVICE_RESET] - base != gfx_offsets::d3d8.reset) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D8_DEVICE_RESET]))) 
+                { 
+                    std::println("[-] D3D8 Reset VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
         }
 
         if (cache::game_d3d9_device && d3d9.present) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d9_device;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D9_DEVICE_PRESENT]))) 
-            { 
-                std::println("[-] D3D9 Present VMT hook detected!");
-                flags_raised.insert(flags::directx_vmt_hook);
+            auto base = (uintptr_t)GetModuleHandleA("d3d9.dll");
+            if (vt[D3D9_DEVICE_PRESENT] - base != gfx_offsets::d3d9.present) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D9_DEVICE_PRESENT]))) 
+                { 
+                    std::println("[-] D3D9 Present VMT hook detected!");
+                    flags_raised.insert(flags::directx_vmt_hook);
+                }
             }
 
             uintptr_t *d3d9ex_vt = nullptr;
@@ -608,123 +624,175 @@ namespace gfx_offsets
             if (query_interface_vtable<IDirect3DDevice9Ex>(device, &d3d9ex_vt))
             {
                 auto present_ex = d3d9ex_vt[D3D9_DEVICE_PRESENT_EX];
-                if (!utils::is_valid_code_region(reinterpret_cast<void *>(present_ex)))
-                {
-                    std::println("[-] D3D9 PresentEx VMT hook detected!");
-                    flags_raised.insert(flags::directx_vmt_hook);
+                if (present_ex - base != gfx_offsets::d3d9.present_ex) {
+                    if (!utils::is_valid_code_region(reinterpret_cast<void *>(present_ex)))
+                    {
+                        std::println("[-] D3D9 PresentEx VMT hook detected!");
+                        flags_raised.insert(flags::directx_vmt_hook);
+                    }
                 }
             }
 
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D9_DEVICE_RESET]))) 
-            { 
-                std::println("[-] D3D9 Reset VMT hook detected!");
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[D3D9_DEVICE_RESET] - base != gfx_offsets::d3d9.reset) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D9_DEVICE_RESET]))) 
+                { 
+                    std::println("[-] D3D9 Reset VMT hook detected!");
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D9_DEVICE_END_SCENE]))) 
-            { 
-                std::println("[-] D3D9 EndScene VMT hook detected!");
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[D3D9_DEVICE_END_SCENE] - base != gfx_offsets::d3d9.end_scene) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D9_DEVICE_END_SCENE]))) 
+                { 
+                    std::println("[-] D3D9 EndScene VMT hook detected!");
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
+            }
+
+            if (cache::game_d3d9_swap && gfx_offsets::d3d9.present_swap)
+            {
+                uintptr_t *swap_vt = *(uintptr_t **)cache::game_d3d9_swap;
+                if (swap_vt[D3D9_SWAPCHAIN_PRESENT] - base != gfx_offsets::d3d9.present_swap) {
+                    if (!utils::is_valid_code_region(reinterpret_cast<void *>(swap_vt[D3D9_SWAPCHAIN_PRESENT])))
+                    {
+                        std::println("[-] D3D9 SwapChain Present VMT hook detected!");
+                        flags_raised.insert(flags::directx_vmt_hook);
+                    }
+                }
             }
         }
 
         if (cache::game_d3d10_swap && d3d10.present) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d10_swap;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT]))) 
-            {
-                std::println("[-] D3D10 Present VMT hook detected!");
-                flags_raised.insert(flags::directx_vmt_hook);
+            auto base = (uintptr_t)GetModuleHandleA("dxgi.dll");
+            if (vt[DXGI_SWAPCHAIN_PRESENT] - base != gfx_offsets::d3d10.present) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT]))) 
+                {
+                    std::println("[-] D3D10 Present VMT hook detected!");
+                    flags_raised.insert(flags::directx_vmt_hook);
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS]))) 
-            { 
-                std::println("[-] D3D10 ResizeBuffers VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS] - base != gfx_offsets::d3d10.resize) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS]))) 
+                {
+                    std::println("[-] D3D10 ResizeBuffers VMT hook detected!");
+                    flags_raised.insert(flags::directx_vmt_hook);
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_TARGET]))) 
-            { 
-                std::println("[-] D3D10 ResizeTarget VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[DXGI_SWAPCHAIN_RESIZE_TARGET] - base != gfx_offsets::d3d10.resize_target) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_TARGET]))) 
+                {
+                    std::println("[-] D3D10 ResizeTarget VMT hook detected!");
+                    flags_raised.insert(flags::directx_vmt_hook);
+                }
             }
         }
 
         if (cache::game_d3d10_swap1 && d3d10.present1) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d10_swap1;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT1]))) 
-            { 
-                std::println("[-] D3D10 Present1 VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            auto base = (uintptr_t)GetModuleHandleA("dxgi.dll");
+            if (vt[DXGI_SWAPCHAIN_PRESENT1] - base != gfx_offsets::d3d10.present1) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT1]))) 
+                { 
+                    std::println("[-] D3D10 Present1 VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
         }
 
         if (cache::game_d3d11_swap && d3d11.present) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d11_swap;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT]))) 
-            { 
-                std::println("[-] D3D11 Present VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            auto base = (uintptr_t)GetModuleHandleA("d3d11.dll");
+            if (vt[DXGI_SWAPCHAIN_PRESENT] - base != gfx_offsets::d3d11.present) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT]))) 
+                { 
+                    std::println("[-] D3D11 Present VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS]))) 
-            { 
-                std::println("[-] D3D11 ResizeBuffers VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS] - base != gfx_offsets::d3d11.resize) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS]))) 
+                { 
+                    std::println("[-] D3D11 ResizeBuffers VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_TARGET]))) 
-            { 
-                std::println("[-] D3D11 ResizeTarget VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[DXGI_SWAPCHAIN_RESIZE_TARGET] - base != gfx_offsets::d3d11.resize_target) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_TARGET]))) 
+                { 
+                    std::println("[-] D3D11 ResizeTarget VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
         }
 
         if (cache::game_d3d11_swap1 && d3d11.present1) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d11_swap1;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT1]))) 
-            { 
-                std::println("[-] D3D11 Present1 VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            auto base = (uintptr_t)GetModuleHandleA("dxgi.dll");
+            if (vt[DXGI_SWAPCHAIN_PRESENT1] - base != gfx_offsets::d3d11.present1) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT1]))) 
+                { 
+                    std::println("[-] D3D11 Present1 VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
         }
 
         if (cache::game_d3d12_swap && d3d12.present) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d12_swap;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT]))) 
-            { 
-                std::println("[-] D3D12 Present VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            auto base = (uintptr_t)GetModuleHandleA("dxgi.dll");
+            if (vt[DXGI_SWAPCHAIN_PRESENT] - base != gfx_offsets::d3d12.present) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT]))) 
+                { 
+                    std::println("[-] D3D12 Present VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS]))) 
-            { 
-                std::println("[-] D3D12 ResizeBuffers VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS] - base != gfx_offsets::d3d12.resize) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_BUFFERS]))) 
+                { 
+                    std::println("[-] D3D12 ResizeBuffers VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_TARGET]))) 
-            { 
-                std::println("[-] D3D12 ResizeTarget VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            if (vt[DXGI_SWAPCHAIN_RESIZE_TARGET] - base != gfx_offsets::d3d12.resize_target) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_RESIZE_TARGET]))) 
+                { 
+                    std::println("[-] D3D12 ResizeTarget VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
         }
 
         if (cache::game_d3d12_swap1 && d3d12.present1) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d12_swap1;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT1]))) 
-            { 
-                std::println("[-] D3D12 Present1 VMT hook detected!"); 
-                flags_raised.insert(flags::directx_vmt_hook); 
+            auto base = (uintptr_t)GetModuleHandleA("dxgi.dll");
+            if (vt[DXGI_SWAPCHAIN_PRESENT1] - base != gfx_offsets::d3d12.present1) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[DXGI_SWAPCHAIN_PRESENT1]))) 
+                { 
+                    std::println("[-] D3D12 Present1 VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
         }
 
         if (cache::game_d3d12_queue && d3d12.execute_command_lists) 
         {
             uintptr_t* vt = *(uintptr_t**)cache::game_d3d12_queue;
-            if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D12_COMMAND_QUEUE_EXECUTE_COMMAND_LISTS]))) 
-            { 
-                std::println("[-] D3D12 ExecuteCommandLists VMT hook detected!"); 
-                    flags_raised.insert(flags::directx_vmt_hook);
+            auto base = (uintptr_t)GetModuleHandleA("d3d12.dll");
+            if (vt[D3D12_COMMAND_QUEUE_EXECUTE_COMMAND_LISTS] - base != gfx_offsets::d3d12.execute_command_lists) {
+                if (!utils::is_valid_code_region(reinterpret_cast<void *>(vt[D3D12_COMMAND_QUEUE_EXECUTE_COMMAND_LISTS]))) 
+                { 
+                    std::println("[-] D3D12 ExecuteCommandLists VMT hook detected!"); 
+                    flags_raised.insert(flags::directx_vmt_hook); 
+                }
             }
+            
         }
     }
 }

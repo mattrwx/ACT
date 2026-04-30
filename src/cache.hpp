@@ -28,6 +28,7 @@ namespace cache
     inline HWND game_hwnd{};
     inline void* game_d3d8_device{};
     inline void* game_d3d9_device{};
+    inline void* game_d3d9_swap{};
     inline void* game_d3d10_swap{};
     inline void* game_d3d10_swap1{};
     inline void* game_d3d11_swap{};
