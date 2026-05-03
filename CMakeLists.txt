@@ -8,6 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(ACT_SOURCES
     src/main.cpp
     src/utils.cpp
+    src/flags.cpp
     src/internal/exceptions.cpp
     src/internal/threads.cpp
     src/internal/validate_modules.cpp
@@ -50,7 +51,6 @@ target_link_libraries(act PRIVATE
     user32
     d3d9
     d3d10
-    d3d10_1
     d3d11
     d3d12
     dxgi

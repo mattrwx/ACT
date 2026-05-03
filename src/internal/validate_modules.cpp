@@ -5,8 +5,7 @@ static void load_file(const std::string& path, std::unique_ptr<char[]>& buffer, 
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file.is_open())
     {
-        std::println("[-] Failed to open module file: {}", path);
-        flags_raised.insert(flags::failed_to_open_module_file);
+        raise_flag(flags::failed_to_open_module_file, std::format("Failed to open module file: {}", path).c_str());
         return;
     }
 
@@ -154,21 +153,12 @@ static void register_module(HMODULE module)
     auto memory_sections = get_memory_sections(module);
 
     if (disk_sections.size() != memory_sections.size())
-    {
-        std::println("[-] Section count mismatch on register: {}", module_path);
-        flags_raised.insert(flags::section_count_changed);
-    }
+        raise_flag(flags::section_count_changed, std::format("Section count mismatch on register: {}", module_path).c_str());
+
     else
-    {
         for (size_t i{}; i < disk_sections.size(); i++)
-        {
             if (disk_sections[i].hash != memory_sections[i].hash)
-            {
-                std::println("[-] Section hash mismatch on register: {} in {}", disk_sections[i].name, module_path);
-                flags_raised.insert(flags::section_hash_changed);
-            }
-        }
-    }
+                raise_flag(flags::section_hash_changed, std::format("[-] Section hash mismatch on register: {} in {}", disk_sections[i].name, module_path).c_str());
 
     modules::module_map.insert_or_assign(
             module, module_t{
@@ -215,10 +205,7 @@ void modules::validate()
             GetModuleFileNameW(hmod, path_buf, MAX_PATH);
 
             if (!utils::verify_trust(path_buf))
-            {
-                std::println("[-] New module failed trust verification: {}", std::filesystem::path(path_buf).string());
-                flags_raised.insert(flags::new_module_trust_verification);
-            }
+                raise_flag(flags::new_module_trust_verification, std::format("[-] New module failed trust verification: {}", std::filesystem::path(path_buf).string()).c_str());
 
             register_module(hmod);
             continue;
@@ -229,8 +216,7 @@ void modules::validate()
 
         if (current.size() != stored.sections.size())
         {
-            std::println("[-] Section count changed: {:X}", (uintptr_t)hmod);
-            flags_raised.insert(flags::section_count_changed);
+            raise_flag(flags::section_count_changed, std::format("[-] Section count changed: {:X}", (uintptr_t)hmod).c_str());
             continue;
         }
 
@@ -238,17 +224,14 @@ void modules::validate()
         {
             // Hash check
             if (current[i].hash != stored.sections[i].hash)
-            {
-                std::println("[-] Hash changed: {} in {:X}", stored.sections[i].name, (uintptr_t)hmod);
-                flags_raised.insert(flags::section_hash_changed);
-            }
+                raise_flag(flags::section_hash_changed, std::format("[-] Hash changed: {} in {:X}", stored.sections[i].name, (uintptr_t)hmod).c_str());
 
             // Page protection check
             if (current[i].protection != stored.sections[i].protection)
-            {
-                std::println("[-] Protection changed: {} in {:X}  ({:08X} -> {:08X})", stored.sections[i].name, (uintptr_t)hmod, stored.sections[i].protection, current[i].protection);
-                flags_raised.insert(flags::section_protection_changed);
-            }
+                raise_flag(
+                        flags::section_protection_changed,
+                        std::format("[-] Protection changed: {} in {:X}  ({:08X} -> {:08X})", stored.sections[i].name, (uintptr_t)hmod, stored.sections[i].protection, current[i].protection).c_str()
+                );
         }
     }
 }

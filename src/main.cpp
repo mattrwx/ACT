@@ -16,8 +16,6 @@ void main_thread()
     freopen_s(&f, "CONOUT$", "w", stdout);
     freopen_s(&f, "CONIN$", "r", stdin);
 
-    std::println("[+] Started: 0x{:X}", (uintptr_t)cache::local_module::handle);
-
     cache::init();
 
     // Cache info about game module
@@ -33,22 +31,15 @@ void main_thread()
 
     while (true)
     {
-        std::println("[+] Starting scan");
-
         threads::validate_threads();
 
         modules::validate();
 
         gfx_offsets::check();
 
-        // pages::walk();
+        pages::walk();
 
         // exceptions::force_exception();
-
-        for (const auto& value : flags_raised)
-            std::println("Flag {}", (uint8_t)value);
-
-        Sleep(1000);
     }
 }
 

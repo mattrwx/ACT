@@ -9,13 +9,11 @@ void threads::handle_thread_creation()
 
 void threads::validate_thread(DWORD tid)
 {
-
     HANDLE h_thread = OpenThread(THREAD_ALL_ACCESS, false, tid);
 
     if (!h_thread)
     {
-        std::println("[-] Thread handle failed to open.");
-        flags_raised.insert(flags::thread_handle_failed_to_open);
+        raise_flag(flags::thread_handle_failed_to_open, "Thread handle failed to open.");
         return;
     }
 
@@ -24,15 +22,13 @@ void threads::validate_thread(DWORD tid)
 
     if (!NT_SUCCESS(status))
     {
-        std::println("[-] NtQueryInformationThread failure.");
-        flags_raised.insert(flags::NtQueryInformationThread_failure);
+        raise_flag(flags::NtQueryInformationThread_failure, "NtQueryInformationThread failure.");
         return;
     }
 
     if (!utils::is_valid_code_region(start_address))
     {
-        std::println("[-] Start address from invalid region of memory: 0x{:X}", (uintptr_t)start_address);
-        flags_raised.insert(flags::invalid_thread_start_address);
+        raise_flag(flags::invalid_thread_start_address, std::format("Start address from invalid region of memory: 0x{:X}", (uintptr_t)start_address).c_str());
         return;
     }
 }
@@ -42,8 +38,7 @@ void threads::validate_threads()
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
     if (snapshot == INVALID_HANDLE_VALUE)
     {
-        std::println("[-] Failed to open threads snapshot.");
-        flags_raised.insert(flags::failed_to_open_threads_snapshot);
+        raise_flag(flags::failed_to_open_threads_snapshot, "Failed to open threads snapshot.");
         return;
     }
 
@@ -52,8 +47,7 @@ void threads::validate_threads()
 
     if (!Thread32First(snapshot, &thread_entry))
     {
-        std::println("[-] Failed to open first thread.");
-        flags_raised.insert(flags::failed_to_open_first_thread);
+        raise_flag(flags::failed_to_open_first_thread, "Failed to open first thread.");
         CloseHandle(snapshot);
         return;
     }

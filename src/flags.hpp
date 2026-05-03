@@ -1,5 +1,7 @@
 #pragma once
+#include <print>
 #include <unordered_set>
+
 
 enum class flags : uint8_t
 {
@@ -23,3 +25,5 @@ enum class flags : uint8_t
 };
 
 inline std::unordered_set<flags> flags_raised;
+
+void raise_flag(flags flag, const char* note);

@@ -3,35 +3,26 @@
 void exception_handler(EXCEPTION_RECORD* exception_record, CONTEXT* context_record)
 {
     if (*cache::pointers::Wow64PrepareForExecution_pointer != (void*)exception_handler)
-    {
-        std::println("[-] Detected Wow64PrepareForExecution hook.");
-        flags_raised.insert(flags::Wow64PrepareForExecution_hook);
-    }
+        raise_flag(flags::Wow64PrepareForExecution_hook, "Detected Wow64PrepareForExecution hook.");
 
     if (!utils::is_valid_code_region((void*)context_record->Rip))
-    {
-        std::println("[-] Invalid RIP during exception.");
-        flags_raised.insert(flags::invalid_rip_during_exception);
-    }
+        raise_flag(flags::invalid_rip_during_exception, "Invalid RIP during exception.");
 }
 
 // NOTE: Fetching Wow64 pointer may differ on 32 bit, will have to check this later
 void exceptions::place_hook()
 {
-    std::println("[+] Placing exception hook.");
     auto ntdll = GetModuleHandleA("ntdll.dll");
     if (!ntdll)
     {
-        std::println("[-] Failed to find ntdll.dll.");
-        flags_raised.insert(flags::failed_to_find_ntdll);
+        raise_flag(flags::failed_to_find_ntdll, "Failed to find ntdll.dll.");
         return;
     }
 
     auto dispatcher = (uintptr_t)GetProcAddress(ntdll, "KiUserExceptionDispatcher");
     if (!dispatcher)
     {
-        std::println("[-] Failed to find KiUserExceptionDispatcher.");
-        flags_raised.insert(flags::failed_to_find_KiUserExceptionDispatcher);
+        raise_flag(flags::failed_to_find_KiUserExceptionDispatcher, "Failed to find KiUserExceptionDispatcher.");
         return;
     }
 
@@ -39,10 +30,7 @@ void exceptions::place_hook()
     void** function_ptr = (void**)(dispatcher + 8 + rel_addr);
 
     if (*function_ptr)
-    {
-        std::println("[-] Detected Wow64PrepareForExecution_pointer hook.");
-        flags_raised.insert(flags::Wow64PrepareForExecution_hook);
-    }
+        raise_flag(flags::Wow64PrepareForExecution_hook, "Detected Wow64PrepareForExecution hook.");
 
     cache::pointers::Wow64PrepareForExecution_pointer = function_ptr;
 
