@@ -158,7 +158,7 @@ static void register_module(HMODULE module)
     else
         for (size_t i{}; i < disk_sections.size(); i++)
             if (disk_sections[i].hash != memory_sections[i].hash)
-                raise_flag(flags::section_hash_changed, std::format("[-] Section hash mismatch on register: {} in {}", disk_sections[i].name, module_path).c_str());
+                raise_flag(flags::section_hash_changed, std::format("Section hash mismatch on register: {} in {}", disk_sections[i].name, module_path).c_str());
 
     modules::module_map.insert_or_assign(
             module, module_t{
@@ -205,7 +205,7 @@ void modules::validate()
             GetModuleFileNameW(hmod, path_buf, MAX_PATH);
 
             if (!utils::verify_trust(path_buf))
-                raise_flag(flags::new_module_trust_verification, std::format("[-] New module failed trust verification: {}", std::filesystem::path(path_buf).string()).c_str());
+                raise_flag(flags::new_module_trust_verification, std::format("New module failed trust verification: {}", std::filesystem::path(path_buf).string()).c_str());
 
             register_module(hmod);
             continue;
@@ -216,7 +216,7 @@ void modules::validate()
 
         if (current.size() != stored.sections.size())
         {
-            raise_flag(flags::section_count_changed, std::format("[-] Section count changed: {:X}", (uintptr_t)hmod).c_str());
+            raise_flag(flags::section_count_changed, std::format("Section count changed: {:X}", (uintptr_t)hmod).c_str());
             continue;
         }
 
@@ -224,13 +224,13 @@ void modules::validate()
         {
             // Hash check
             if (current[i].hash != stored.sections[i].hash)
-                raise_flag(flags::section_hash_changed, std::format("[-] Hash changed: {} in {:X}", stored.sections[i].name, (uintptr_t)hmod).c_str());
+                raise_flag(flags::section_hash_changed, std::format("Hash changed: {} in {:X}", stored.sections[i].name, (uintptr_t)hmod).c_str());
 
             // Page protection check
             if (current[i].protection != stored.sections[i].protection)
                 raise_flag(
                         flags::section_protection_changed,
-                        std::format("[-] Protection changed: {} in {:X}  ({:08X} -> {:08X})", stored.sections[i].name, (uintptr_t)hmod, stored.sections[i].protection, current[i].protection).c_str()
+                        std::format("Protection changed: {} in {:X}  ({:08X} -> {:08X})", stored.sections[i].name, (uintptr_t)hmod, stored.sections[i].protection, current[i].protection).c_str()
                 );
         }
     }

@@ -16,6 +16,8 @@ void main_thread()
     freopen_s(&f, "CONOUT$", "w", stdout);
     freopen_s(&f, "CONIN$", "r", stdin);
 
+    std::println("Hewwo");
+
     cache::init();
 
     // Cache info about game module
