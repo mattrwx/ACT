@@ -2,21 +2,37 @@
 #include <print>
 #include <thread>
 #include "cache.hpp"
+#include "external/overlay.hpp"
+#include "gui/gui.hpp"
 #include "internal/exceptions.hpp"
 #include "internal/page_walk.hpp"
 #include "internal/threads.hpp"
 #include "internal/validate_modules.hpp"
-#include "internal/vmt_hook_detection.hpp"
+#include "internal/vtable.hpp"
+
+void render_thread()
+{
+    gui::init();
+
+    while (gui::alive())
+    {
+        gui::render();
+        Sleep(1);
+    }
+}
 
 void main_thread()
 {
+
+#ifdef CONSOLE
     AllocConsole();
 
     FILE* f;
     freopen_s(&f, "CONOUT$", "w", stdout);
     freopen_s(&f, "CONIN$", "r", stdin);
 
-    std::println("Hewwo");
+    std::println("Debug Console");
+#endif
 
     cache::init();
 
@@ -31,16 +47,15 @@ void main_thread()
     // Shit must run early on (at least before WE make any modification)
     modules::init();
 
-    while (true)
+    std::thread(render_thread).detach();
+
+    while (gui::alive())
     {
         threads::validate_threads();
-
         modules::validate();
-
+        overlay::detect_overlay_window();
         gfx_offsets::check();
-
         pages::walk();
-
         // exceptions::force_exception();
     }
 }
@@ -53,15 +68,18 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID)
         {
             cache::local_module::handle = h_module;
 
-            std::thread t(main_thread);
-            t.detach();
+            std::thread(main_thread).detach();
             break;
         }
 
         case DLL_PROCESS_DETACH:
         {
+
+#ifdef CONSOLE
             std::println("[X] Detected unload");
             FreeConsole();
+#endif
+
             break;
         }
 

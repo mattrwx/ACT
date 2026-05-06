@@ -2,9 +2,15 @@
 
 void raise_flag(flags flag, const char* note)
 {
-    if (flags_raised.contains(flag))
+    static std::unordered_set<std::string> seen;
+
+    if (!seen.insert(note).second)
         return;
 
+#ifdef CONSOLE
     std::println("[-] {}", note);
+#endif
+    gui::print(std::format("[-] {}", note).c_str());
+
     flags_raised.insert(flag);
 }

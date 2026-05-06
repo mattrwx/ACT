@@ -9,17 +9,14 @@ set(ACT_SOURCES
     src/main.cpp
     src/utils.cpp
     src/flags.cpp
+    src/gui/gui.cpp
     src/internal/exceptions.cpp
     src/internal/threads.cpp
     src/internal/validate_modules.cpp
     src/internal/page_walk.cpp
+    src/internal/vtable.cpp
+    src/external/overlay.cpp
 )
-
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/vmt_hook_detection.cpp"
-   AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/vmt_hook_detection.hpp")
-    list(APPEND ACT_SOURCES src/internal/vmt_hook_detection.cpp)
-endif()
-
 add_library(act SHARED ${ACT_SOURCES})
 
 target_include_directories(act PRIVATE src)
@@ -43,7 +40,36 @@ set_target_properties(act PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
 )
 
+set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/third_party/imgui)
+
+add_library(imgui STATIC
+    ${IMGUI_DIR}/imgui.cpp
+    ${IMGUI_DIR}/imgui_draw.cpp
+    ${IMGUI_DIR}/imgui_tables.cpp
+    ${IMGUI_DIR}/imgui_widgets.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_dx11.cpp
+    ${IMGUI_DIR}/backends/imgui_impl_win32.cpp
+)
+
+target_include_directories(imgui PUBLIC
+    ${IMGUI_DIR}
+    ${IMGUI_DIR}/backends
+)
+
+target_compile_definitions(imgui PUBLIC
+    WIN32_LEAN_AND_MEAN
+    NOMINMAX
+)
+
+target_link_libraries(imgui PUBLIC
+    d3d11
+    dxgi
+    d3dcompiler
+    dwmapi
+)
+
 target_link_libraries(act PRIVATE
+    imgui
     ntdll
     bcrypt
     wintrust
@@ -51,7 +77,5 @@ target_link_libraries(act PRIVATE
     user32
     d3d9
     d3d10
-    d3d11
     d3d12
-    dxgi
 )

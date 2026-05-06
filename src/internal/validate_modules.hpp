@@ -1,5 +1,3 @@
-// validate_modules.hpp
-
 #pragma once
 #include <Windows.h>
 #include <bcrypt.h>

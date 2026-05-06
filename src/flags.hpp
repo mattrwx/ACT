@@ -1,10 +1,14 @@
 #pragma once
 #include <print>
 #include <unordered_set>
+#include "gui/gui.hpp"
 
 
 enum class flags : uint8_t
 {
+    failed_to_remove_topmost_flag,
+    failed_to_get_overlay_module,
+    overlay_handle_creation_failed,
     failed_to_open_threads_snapshot,
     failed_to_open_first_thread,
     thread_handle_failed_to_open,
