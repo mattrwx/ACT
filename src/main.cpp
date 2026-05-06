@@ -6,9 +6,11 @@
 #include "gui/gui.hpp"
 #include "internal/exceptions.hpp"
 #include "internal/page_walk.hpp"
+#include "internal/rtti_validate_all.hpp"
 #include "internal/threads.hpp"
 #include "internal/validate_modules.hpp"
 #include "internal/vtable.hpp"
+
 
 void render_thread()
 {
@@ -20,6 +22,7 @@ void render_thread()
         Sleep(1);
     }
 }
+
 
 void main_thread()
 {
@@ -56,6 +59,9 @@ void main_thread()
         overlay::detect_overlay_window();
         gfx_offsets::check();
         pages::walk();
+
+        rtti::validate_all();
+
         // exceptions::force_exception();
     }
 }
