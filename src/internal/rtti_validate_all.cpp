@@ -17,13 +17,7 @@ struct rtti_complete_object_locator
     uint32_t p_self;
 };
 
-struct section_range
-{
-    uintptr_t begin;
-    uintptr_t end;
-};
-
-struct cached_vtable
+struct address_range
 {
     uintptr_t begin;
     uintptr_t end;
@@ -31,9 +25,9 @@ struct cached_vtable
 
 struct cached_module
 {
-    section_range text;
-    section_range rdata;
-    std::vector<cached_vtable> vtables;
+    address_range text;
+    address_range rdata;
+    std::vector<address_range> vtables;
 };
 
 static std::unordered_map<HMODULE, cached_module> vtable_cache;
@@ -54,7 +48,7 @@ void rtti::validate_all()
         // check for cached vtables
         if (auto cached = vtable_cache.find(hmodule); cached != vtable_cache.end())
         {
-            for (cached_vtable vtable : cached->second.vtables)
+            for (address_range vtable : cached->second.vtables)
             {
                 for (uintptr_t slot_addr = vtable.begin; slot_addr + sizeof(uintptr_t) <= vtable.end; slot_addr += sizeof(uintptr_t))
                 {
@@ -65,7 +59,7 @@ void rtti::validate_all()
                     if (!slot || !(slot >= cached->second.text.begin && slot < cached->second.text.end))
                     {
                         size_t index = (slot_addr - vtable.begin) / sizeof(uintptr_t);
-                        raise_flag(flags::rtti_vmt_hook, std::format("RTTI VMT hook detected: module=0x{:X} vtable=0x{:X} slot[{}]=0x{:X}", pmodule, vtable.begin, index, slot).c_str());
+                        raise_flag(flags::vmt_hook, std::format("RTTI VMT hook detected: module=0x{:X} vtable=0x{:X} slot[{}]=0x{:X}", pmodule, vtable.begin, index, slot).c_str());
                     }
                 }
             }
@@ -79,7 +73,7 @@ void rtti::validate_all()
         uintptr_t image_size = nt->OptionalHeader.SizeOfImage;
 
         auto* section = IMAGE_FIRST_SECTION(nt);
-        section_range text{}, rdata{};
+        address_range text{}, rdata{};
         bool found_text = false;
         bool found_rdata = false;
 
@@ -146,7 +140,7 @@ void rtti::validate_all()
             if (col.p_class_descriptor >= image_size)
                 continue;
 
-            cached_vtable vtable{};
+            address_range vtable{};
             // quarkslab.com: "This structure [RTTICompleteObjectLocator] is located at VFT - sizeof(void*)"
             // therefore VFT (vtable first slot) = address of the pointer that references the COL + sizeof(uintptr_t)
             vtable.begin = p + sizeof(uintptr_t);
@@ -178,7 +172,7 @@ void rtti::validate_all()
                 if (!slot || !(slot >= text.begin && slot < text.end))
                 {
                     size_t index = (slot_addr - vtable.begin) / sizeof(uintptr_t);
-                    raise_flag(flags::rtti_vmt_hook, std::format("RTTI VMT hook detected: module=0x{:X} vtable=0x{:X} slot[{}]=0x{:X}", pmodule, vtable.begin, index, slot).c_str());
+                    raise_flag(flags::vmt_hook, std::format("RTTI VMT hook detected: module=0x{:X} vtable=0x{:X} slot[{}]=0x{:X}", pmodule, vtable.begin, index, slot).c_str());
                 }
             }
         }

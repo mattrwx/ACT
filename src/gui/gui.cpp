@@ -38,8 +38,7 @@ static const std::unordered_map<flags, const char*> FLAG_DESCRIPTIONS = {
         {flags::section_hash_changed,                     "PE section hash mismatch detected"                   },
         {flags::section_protection_changed,               "PE section memory protection modified"               },
         {flags::failed_to_open_module_file,               "Failed to open module file on disk"                  },
-        {flags::directx_vmt_hook,                         "Hook detected on DirectX VMT"                        },
-        {flags::rtti_vmt_hook,                            "Hook detected on RTTI VMT"                           },
+        {flags::vmt_hook,                                 "VTable hook detected!"                               }
 };
 
 static void create_rtv()

@@ -42,8 +42,6 @@ void main_thread()
     // Cache info about game module
     utils::populate_pe(GetModuleHandle(0), cache::main_pe::dos_header, cache::main_pe::nt_headers);
 
-    gfx_offsets::collect();
-
     // Not overwriting any read only sections
     exceptions::place_hook();
 
@@ -57,8 +55,9 @@ void main_thread()
         threads::validate_threads();
         modules::validate();
         overlay::detect_overlay_window();
-        gfx_offsets::check();
         pages::walk();
+
+        vtable::validate_directx_vtables();
 
         rtti::validate_all();
 
