@@ -6,7 +6,6 @@
 #include "gui/gui.hpp"
 #include "internal/exceptions.hpp"
 #include "internal/page_walk.hpp"
-#include "internal/rtti_validate_all.hpp"
 #include "internal/threads.hpp"
 #include "internal/validate_modules.hpp"
 #include "internal/vtable.hpp"
@@ -56,10 +55,7 @@ void main_thread()
         modules::validate();
         overlay::detect_overlay_window();
         pages::walk();
-
-        vtable::validate_directx_vtables();
-
-        rtti::validate_all();
+        vtable::validate_all();
 
         // exceptions::force_exception();
     }

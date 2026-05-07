@@ -16,7 +16,7 @@ set(ACT_SOURCES
     src/internal/page_walk.cpp
     src/internal/vtable.cpp
     src/external/overlay.cpp
-    src/internal/rtti_validate_all.cpp
+    src/internal/rtti.cpp
 )
 add_library(act SHARED ${ACT_SOURCES})
 

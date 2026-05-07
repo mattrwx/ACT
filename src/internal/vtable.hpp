@@ -2,10 +2,11 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include "../flags.hpp"
+#include "rtti.hpp"
 #include "utils.hpp"
 
 
 namespace vtable
 {
-    void validate_directx_vtables();
+    void validate_all();
 }
