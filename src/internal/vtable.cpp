@@ -79,15 +79,20 @@ void validate_directx_vtables()
         validate_vtable(vtable, 30);
 }
 
-void validate_rtti_vtables()
+std::vector<std::pair<void**, size_t>> hueristically_detect_vtables()
 {
-    for (auto rtti_vtable : rtti::get_vtables())
-        validate_vtable(rtti_vtable.first, rtti_vtable.second);
+    return {}; // HAKAN DO THIS
+}
+
+void validate_hueristically_detected_vtables()
+{
+    for (auto vtable : hueristically_detect_vtables())
+        validate_vtable(vtable.first, vtable.second);
 }
 
 void vtable::validate_all()
 {
     validate_directx_vtables();
 
-    validate_rtti_vtables();
+    validate_hueristically_detected_vtables();
 }

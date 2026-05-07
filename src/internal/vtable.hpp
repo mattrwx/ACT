@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <d3d11.h>
 #include "../flags.hpp"
-#include "rtti.hpp"
 #include "utils.hpp"
 
 
