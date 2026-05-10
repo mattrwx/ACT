@@ -253,7 +253,7 @@ void gui::render()
     constexpr ImU32 COL_CLOSE_BG = IM_COL32(160, 40, 40, 255);
     constexpr ImU32 COL_CLOSE_ICON = IM_COL32(255, 255, 255, 255);
     constexpr ImU32 COL_CLOSE_IDLE = IM_COL32(110, 110, 140, 255);
-    constexpr ImU32 COL_FLAG_MARKER = IM_COL32(210, 55, 55, 255);
+    constexpr ImU32 COL_FLAG_MARKER = IM_COL32(55, 55, 255, 255);
     constexpr ImU32 COL_SECTION_LABEL = IM_COL32(100, 100, 140, 255);
 
     MSG msg = {};
