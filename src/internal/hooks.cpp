@@ -1,4 +1,5 @@
 #include "hooks.hpp"
+#include <format>
 
 using SendInput_t = UINT(WINAPI*)(UINT, LPINPUT, int);
 

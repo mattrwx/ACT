@@ -9,7 +9,6 @@ void exception_handler(EXCEPTION_RECORD* exception_record, CONTEXT* context_reco
         raise_flag(flags::invalid_rip_during_exception, "Invalid RIP during exception.");
 }
 
-// NOTE: Fetching Wow64 pointer may differ on 32 bit, will have to check this later
 void exceptions::place_hook()
 {
     auto ntdll = GetModuleHandleA("ntdll.dll");
