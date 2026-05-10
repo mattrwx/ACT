@@ -2,10 +2,10 @@
 
 void raise_flag(flags flag, const char* note)
 {
-    static std::unordered_set<std::string> seen;
-
-    if (!seen.insert(note).second)
+    if (!logs.insert(note).second)
         return;
+
+    log_flag_map[note] = flag;
 
 #ifdef CONSOLE
     std::println("[-] {}", note);

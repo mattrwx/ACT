@@ -1,8 +1,8 @@
 #pragma once
 #include <print>
+#include <unordered_map>
 #include <unordered_set>
 #include "gui/gui.hpp"
-
 
 enum class flags : uint8_t
 {
@@ -28,6 +28,8 @@ enum class flags : uint8_t
     vmt_hook
 };
 
-inline std::unordered_set<flags> flags_raised;
+inline std::unordered_set<flags>       flags_raised;
+inline std::unordered_set<std::string> logs;
+inline std::unordered_map<std::string, flags> log_flag_map;
 
 void raise_flag(flags flag, const char* note);

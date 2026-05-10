@@ -389,10 +389,54 @@ void gui::render()
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.03f, 0.03f, 0.06f, 1.0f));
         ImGui::BeginChild("##log", {inner_w, 0.0f}, false, ImGuiWindowFlags_HorizontalScrollbar);
 
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {4.0f, 2.0f});
-        for (const auto& line : s_log)
-            ImGui::TextUnformatted(line.c_str());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {4.0f, 3.0f});
+
+        constexpr float BTN_R      = 4.0f;
+        constexpr float BTN_W      = (BTN_R + 2.0f) * 2.0f;
+        constexpr ImU32 COL_RM     = IM_COL32(160, 40, 40, 210);
+        constexpr ImU32 COL_RM_HOV = IM_COL32(220, 55, 55, 255);
+
+        int remove_idx = -1;
+
+        for (int i = 0; i < static_cast<int>(s_log.size()); i++)
+        {
+            ImGui::PushID(i);
+
+            const ImVec2 p  = ImGui::GetCursorScreenPos();
+            const float  lh = ImGui::GetTextLineHeight();
+            const float  cx = p.x + BTN_R + 2.0f;
+            const float  cy = p.y + lh * 0.5f;
+
+            ImGui::InvisibleButton("##rm", {BTN_W, lh});
+            const bool hov = ImGui::IsItemHovered();
+            ImGui::GetWindowDrawList()->AddCircleFilled({cx, cy}, BTN_R, hov ? COL_RM_HOV : COL_RM);
+            if (ImGui::IsItemClicked())
+                remove_idx = i;
+
+            ImGui::SameLine();
+            ImGui::TextUnformatted(s_log[i].c_str());
+
+            ImGui::PopID();
+        }
+
         ImGui::PopStyleVar();
+
+        if (remove_idx >= 0)
+        {
+            s_log.erase(s_log.begin() + remove_idx);
+
+            flags_raised.clear();
+            for (const auto& line : s_log)
+            {
+                constexpr std::string_view PREFIX = "[-] ";
+                const std::string note = line.size() > PREFIX.size()
+                                       ? line.substr(PREFIX.size())
+                                       : line;
+                const auto it = log_flag_map.find(note);
+                if (it != log_flag_map.end())
+                    flags_raised.insert(it->second);
+            }
+        }
 
         if (s_scroll)
         {
