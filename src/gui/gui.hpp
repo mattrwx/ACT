@@ -11,7 +11,6 @@
 #include "../imgui/backends/imgui_impl_win32.h"
 #include "../imgui/imgui.h"
 
-
 namespace gui
 {
     void push_log(std::string msg);
@@ -20,4 +19,15 @@ namespace gui
     void shutdown();
     void print(const char* msg);
     bool alive();
+}
+
+inline void render_thread()
+{
+    gui::init();
+
+    while (gui::alive())
+    {
+        gui::render();
+        Sleep(1);
+    }
 }

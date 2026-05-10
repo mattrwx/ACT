@@ -15,6 +15,7 @@ set(ACT_SOURCES
     src/internal/validate_modules.cpp
     src/internal/page_walk.cpp
     src/internal/vtable.cpp
+    src/internal/hooks.cpp
     src/external/overlay.cpp
 )
 add_library(act SHARED ${ACT_SOURCES})

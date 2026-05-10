@@ -235,3 +235,31 @@ void modules::validate()
         }
     }
 }
+
+void modules::rehash_containing_section(void* address)
+{
+    auto addr = reinterpret_cast<uintptr_t>(address);
+
+    for (auto& [hmod, mod] : module_map)
+    {
+        if (addr < mod.base || addr >= mod.base + mod.size)
+            continue;
+
+        auto* section = IMAGE_FIRST_SECTION(mod.nt);
+        for (WORD i{}; i < mod.nt->FileHeader.NumberOfSections; i++, section++)
+        {
+            uintptr_t sec_start = mod.base + section->VirtualAddress;
+            uintptr_t sec_end   = sec_start + section->Misc.VirtualSize;
+
+            if (addr < sec_start || addr >= sec_end)
+                continue;
+
+            std::string_view name((char*)section->Name, strnlen((char*)section->Name, IMAGE_SIZEOF_SHORT_NAME));
+            for (auto& s : mod.sections)
+                if (s.name == name)
+                    s.hash = md5(sec_start, section->SizeOfRawData);
+
+            return;
+        }
+    }
+}

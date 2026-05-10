@@ -38,4 +38,5 @@ namespace modules
 
     void init();
     void validate();
+    void rehash_containing_section(void* address);
 }

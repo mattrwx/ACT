@@ -9,18 +9,7 @@
 #include "internal/threads.hpp"
 #include "internal/validate_modules.hpp"
 #include "internal/vtable.hpp"
-
-
-void render_thread()
-{
-    gui::init();
-
-    while (gui::alive())
-    {
-        gui::render();
-        Sleep(1);
-    }
-}
+#include "internal/hooks.hpp"
 
 
 void main_thread()
@@ -46,6 +35,8 @@ void main_thread()
 
     // Shit must run early on (at least before WE make any modification)
     modules::init();
+    
+    hooks::place_input_hooks();
 
     std::thread(render_thread).detach();
 
@@ -75,12 +66,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID)
 
         case DLL_PROCESS_DETACH:
         {
-
-#ifdef CONSOLE
             exit(0);
-#endif
-
-            break;
         }
 
         case DLL_THREAD_ATTACH:
