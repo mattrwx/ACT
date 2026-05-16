@@ -4,6 +4,8 @@ ACT is a mock anti-cheat designed to provide vulnerability researchers with a sa
 
 ## Usage
 
+[Video](https://www.youtube.com/watch?v=3hbjnSbEz8w)
+
 If you downloaded the installer from the [Releases](https://github.com/mattrwx/ACT/releases) page, the loader will typically be located at: `C:\Program Files\AntiCheatTelemetry\`
 
 If you would rather compile the project yourself, see the [Build with CMake](#build-with-cmake) section below. After building, the binaries will typically be located in: `build\bin\`
