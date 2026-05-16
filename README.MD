@@ -41,7 +41,7 @@ cmake --build build
 ```
 
 ## Credits
-- __[Raphael](https://github.com/irp24)__
+- __[Hakan](https://github.com/irp24)__
 - __[Kage](https://github.com/Kaggee6)__
 - __[Lotus](https://github.com/LadyDarknes)__
 - __[Matt](https://github.com/mattrwx)__
