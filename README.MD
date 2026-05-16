@@ -10,26 +10,26 @@ If you would rather compile the project yourself, see the [Build with CMake](#bu
 
 ## Flags
 *Note: There can be multiple detection routines that trigger the same console message*
-Failed to remove topmost flag from overlay window
-Failed to retrieve module path for overlay process
-Failed to open handle to overlay process
-Failed to create thread snapshot
-Failed to open first thread from snapshot
-Failed to open thread handle
-NtQueryInformationThread call failed
-Thread start address outside valid module range
-Exception handler chain has been tampered
-Hook detected on Wow64PrepareForExecution
-Failed to locate KiUserExceptionDispatcher
-Failed to locate ntdll
-RIP outside valid executable region during exception
-Executable page found outside known modules
-Untrusted module loaded into process
-PE section count mismatch detected
-PE section hash mismatch detected
-PE section memory protection modified
-Failed to open module file on disk
-VTable hook detected
+- Failed to remove topmost flag from overlay window
+- Failed to retrieve module path for overlay process
+- Failed to open handle to overlay process
+- Failed to create thread snapshot
+- Failed to open first thread from snapshot
+- Failed to open thread handle
+- NtQueryInformationThread call failed
+- Thread start address outside valid module range
+- Exception handler chain has been tampered
+- Hook detected on Wow64PrepareForExecution
+- Failed to locate KiUserExceptionDispatcher
+- Failed to locate ntdll
+- RIP outside valid executable region during exception
+- Executable page found outside known modules
+- Untrusted module loaded into process
+- PE section count mismatch detected
+- PE section hash mismatch detected
+- PE section memory protection modified
+- Failed to open module file on disk
+- VTable hook detected
 
 ## Build with CMake
 ```bash
