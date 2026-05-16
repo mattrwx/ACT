@@ -39,3 +39,9 @@ mkdir build
 cmake -B build
 cmake --build build
 ```
+
+## Credits
+[Hakan](https://github.com/irp24)
+[Kage](https://github.com/Kaggee6)
+[Lotus](https://github.com/LadyDarknes)
+[Matt](https://github.com/mattrwx)
