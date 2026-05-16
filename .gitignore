@@ -6,6 +6,7 @@ out/
 *.exp
 *.lib
 *.dll
+*.iss
 
 *.obj
 *.o
